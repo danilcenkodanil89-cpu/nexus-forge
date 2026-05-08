@@ -1,0 +1,54 @@
+{
+  "name": "nexus-forge",
+  "version": "1.0.0",
+  "description": "Игровой лаунчер в стиле Wuthering Waves",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "generate-icon": "node assets/generate-icon.js",
+    "generate-icon-nsis": "node assets/generate-icon-bmp.js"
+  },
+  "author": "Nexus Team",
+  "license": "MIT",
+  "dependencies": {
+    "extract-file-icon": "^0.3.2"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.nexusforge.launcher",
+    "productName": "Nexus Forge",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "icon": "assets/nexus-forge.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/nexus-forge-nsis.ico",
+      "uninstallerIcon": "assets/nexus-forge-nsis.ico",
+      "installerHeaderIcon": "assets/nexus-forge-nsis.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nexus Forge",
+      "include": "build/installer.nsh"
+    }
+  }
+}
