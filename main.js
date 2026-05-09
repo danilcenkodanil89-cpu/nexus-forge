@@ -1,18 +1,19 @@
-const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, dialog } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const extractFileIcon = require('extract-file-icon');
 const fs = require('fs');
+const Updater = require('./updater/updater');
 
 let mainWindow;
 let tray = null;
+let updater = null;
 const iconCacheDir = path.join(app.getPath('userData'), 'icon-cache');
 
 if (!fs.existsSync(iconCacheDir)) {
   fs.mkdirSync(iconCacheDir, { recursive: true });
 }
 
-// Путь к иконкам
 const ICON_PATH = path.join(__dirname, 'assets', 'nexus-forge.ico');
 const TRAY_ICON_PATH = path.join(__dirname, 'assets', 'tray-icon.png');
 
@@ -60,6 +61,13 @@ const GAMES = [
 ];
 
 function createWindow() {
+  // Если окно уже существует — показываем его
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 620,
@@ -83,7 +91,7 @@ function createWindow() {
   });
 
   mainWindow.setFullScreenable(false);
-
+  
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'F11' || (input.alt && input.key === 'Enter')) {
       event.preventDefault();
@@ -94,6 +102,10 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    
+    if (updater) {
+      updater.startAutoCheck(mainWindow);
+    }
   });
 
   mainWindow.on('close', (event) => {
@@ -109,8 +121,14 @@ function createWindow() {
 }
 
 function createTray() {
-  let trayIcon;
+  // Уничтожаем старый трей если есть
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 
+  let trayIcon;
+  
   try {
     if (fs.existsSync(TRAY_ICON_PATH)) {
       trayIcon = nativeImage.createFromPath(TRAY_ICON_PATH);
@@ -118,11 +136,9 @@ function createTray() {
         trayIcon = trayIcon.resize({ width: 16, height: 16 });
       }
     } else {
-      console.warn('Tray icon not found, using default');
       trayIcon = nativeImage.createEmpty();
     }
   } catch (e) {
-    console.error('Failed to load tray icon:', e);
     trayIcon = nativeImage.createEmpty();
   }
 
@@ -133,11 +149,22 @@ function createTray() {
     {
       label: 'Развернуть Nexus Forge',
       click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-        } else {
-          createWindow();
+        createWindow();
+      }
+    },
+    {
+      label: 'Проверить обновления',
+      click: async () => {
+        if (updater) {
+          const result = await updater.checkForUpdates(false);
+          if (!result.hasUpdate) {
+            dialog.showMessageBox({
+              type: 'info',
+              title: 'Обновления',
+              message: 'У вас установлена последняя версия!',
+              detail: `Текущая версия: ${updater.currentVersion}`
+            });
+          }
         }
       }
     },
@@ -150,11 +177,20 @@ function createTray() {
       label: 'Запустить Blood Strike',
       click: () => launchGame(GAMES[1].path)
     },
+    {
+      label: 'Запустить CS: Source',
+      click: () => launchGame(GAMES[4].path)
+    },
     { type: 'separator' },
     {
       label: 'Выход',
       click: () => {
         app.isQuiting = true;
+        // Уничтожаем трей перед выходом
+        if (tray) {
+          tray.destroy();
+          tray = null;
+        }
         app.quit();
       }
     }
@@ -163,10 +199,7 @@ function createTray() {
   tray.setContextMenu(contextMenu);
 
   tray.on('double-click', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    createWindow();
   });
 }
 
@@ -238,6 +271,7 @@ async function getExeIcon(exePath) {
   return null;
 }
 
+// IPC обработчики
 ipcMain.handle('get-games', async () => {
   const gamesWithIcons = await Promise.all(
     GAMES.map(async (game) => {
@@ -248,25 +282,16 @@ ipcMain.handle('get-games', async () => {
   return gamesWithIcons;
 });
 
-// --- ИЗМЕНЕНО: отслеживаем процесс и шлём событие при закрытии ---
 ipcMain.handle('launch-game', async (event, gamePath) => {
   return new Promise((resolve, reject) => {
-    const child = exec(`"${gamePath}"`, (error) => {
-      // Процесс завершился — уведомляем рендерер
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('game-exited', gamePath);
-      }
-
+    exec(`"${gamePath}"`, (error) => {
       if (error) {
         console.error('Launch error:', error);
+        reject(error.message);
+      } else {
+        resolve({ success: true });
       }
     });
-
-    if (child.pid) {
-      resolve({ success: true, pid: child.pid });
-    } else {
-      reject('Failed to start process');
-    }
   });
 });
 
@@ -279,37 +304,46 @@ ipcMain.handle('minimize-window', () => {
   if (mainWindow) mainWindow.minimize();
 });
 
-ipcMain.handle('maximize-window', () => {
-  if (mainWindow) {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow.maximize();
-    }
-  }
-});
-
 ipcMain.handle('close-window', () => {
   if (mainWindow) mainWindow.hide();
 });
 
+ipcMain.handle('check-updates', async () => {
+  if (updater) {
+    return await updater.checkForUpdates(false);
+  }
+  return { hasUpdate: false };
+});
+
+ipcMain.handle('get-update-status', () => {
+  if (updater) {
+    return updater.getUpdateStatus();
+  }
+  return { updateAvailable: false };
+});
+
 app.whenReady().then(() => {
+  updater = new Updater();
+  
   createWindow();
   createTray();
 });
 
-app.on('window-all-closed', (e) => {
-  e.preventDefault();
+// При активации (клик по иконке/ярлыку) — показываем окно вместо создания нового
+app.on('activate', () => {
+  createWindow();
 });
 
-app.on('activate', () => {
-  if (mainWindow) {
-    mainWindow.show();
-  } else {
-    createWindow();
+// При выходе — уничтожаем трей
+app.on('before-quit', () => {
+  app.isQuiting = true;
+  if (tray) {
+    tray.destroy();
+    tray = null;
   }
 });
 
-app.on('before-quit', () => {
-  app.isQuiting = true;
+// Не выходим при закрытии окна — остаёмся в трее
+app.on('window-all-closed', (e) => {
+  e.preventDefault();
 });

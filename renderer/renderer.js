@@ -1,9 +1,6 @@
 let allGames = [];
 let selectedGame = null;
 
-// Хранит пути запущенных процессов
-const runningGames = new Set();
-
 const FALLBACK_ICONS = {
   'shooter': '🔫',
   'action-rpg': '⚔️',
@@ -16,21 +13,14 @@ async function init() {
   try {
     allGames = await window.electronAPI.getGames();
     console.log('Games loaded:', allGames.map(g => ({ id: g.id, hasIcon: !!g.icon })));
-
+    
     selectedGame = allGames[0];
     renderGameList();
     updateBigIcon();
     updateHero();
     setupEventListeners();
     setupWindowControls();
-
-    // Слушаем завершение процесса из main.js
-    window.electronAPI.onGameExited((path) => {
-      runningGames.delete(path);
-      renderGameList();     // обновить иконки в списке
-      updateStartButton();  // вернуть кнопку в START
-    });
-
+    setupUpdates();
   } catch (error) {
     console.error('Initialization error:', error);
   }
@@ -43,16 +33,15 @@ function getFallbackIcon(category) {
 function renderGameList() {
   const list = document.getElementById('game-list');
   if (!list) return;
-
+  
   list.innerHTML = allGames.map(game => {
     const hasIcon = game.icon && game.icon.startsWith('data:image');
-    const iconHtml = hasIcon
+    const iconHtml = hasIcon 
       ? `<img src="${game.icon}" alt="${game.name}">`
       : `<span class="fallback">${getFallbackIcon(game.category)}</span>`;
-
+    
     const isActive = selectedGame && selectedGame.id === game.id ? 'active' : '';
-    const isRunning = runningGames.has(game.path);
-
+    
     return `
       <div class="game-item ${isActive}" data-id="${game.id}">
         <div class="game-thumb">
@@ -60,9 +49,8 @@ function renderGameList() {
         </div>
         <div class="game-item-info">
           <h4>${game.name}</h4>
-          <span>${isRunning ? '▶ Запущено' : game.category}</span>
+          <span>${game.category}</span>
         </div>
-        ${isRunning ? '<div class="running-dot"></div>' : ''}
       </div>
     `;
   }).join('');
@@ -80,18 +68,18 @@ function renderGameList() {
 
 function updateBigIcon() {
   if (!selectedGame) return;
-
+  
   const container = document.getElementById('big-icon');
   if (!container) {
     console.error('big-icon element not found');
     return;
   }
-
+  
   const hasIcon = selectedGame.icon && selectedGame.icon.startsWith('data:image');
   console.log('Updating big icon:', selectedGame.name, 'hasIcon:', hasIcon);
-
+  
   container.innerHTML = '';
-
+  
   if (hasIcon) {
     const img = document.createElement('img');
     img.src = selectedGame.icon;
@@ -116,20 +104,20 @@ function showFallbackIcon(container, category) {
 
 function updateHero() {
   if (!selectedGame) return;
-
+  
   const title = document.getElementById('hero-title');
   const subtitle = document.getElementById('hero-subtitle');
-
+  
   if (!title || !subtitle) return;
-
+  
   title.style.animation = 'none';
   subtitle.style.animation = 'none';
-
+  
   void title.offsetWidth;
-
+  
   title.textContent = selectedGame.name;
   subtitle.textContent = selectedGame.description || 'Готов к запуску';
-
+  
   title.style.animation = 'fadeInUp 0.6s ease-out';
   subtitle.style.animation = 'fadeInUp 0.6s ease-out 0.1s both';
 
@@ -137,29 +125,64 @@ function updateHero() {
     document.documentElement.style.setProperty('--accent', selectedGame.accent);
     document.documentElement.style.setProperty('--accent-glow', selectedGame.accent + '66');
   }
-
-  // Обновить кнопку под новую выбранную игру
-  updateStartButton();
 }
 
-// --- НОВОЕ: обновление состояния кнопки START / RUNNING ---
-function updateStartButton() {
-  const btn = document.getElementById('start-btn');
-  const textEl = btn?.querySelector('.start-text');
-  if (!btn || !textEl || !selectedGame) return;
-
-  const isRunning = runningGames.has(selectedGame.path);
-
-  if (isRunning) {
-    textEl.textContent = 'RUNNING';
-    btn.classList.add('is-running');
-    btn.disabled = true;
-  } else {
-    textEl.textContent = 'START';
-    btn.classList.remove('is-running');
-    btn.disabled = false;
-    btn.style.opacity = '1';
+// ===== UPDATES =====
+async function setupUpdates() {
+  // Получаем текущую версию
+  const status = await window.electronAPI.getUpdateStatus();
+  const versionEl = document.getElementById('version-info');
+  if (versionEl && status.currentVersion) {
+    versionEl.textContent = `v${status.currentVersion}`;
   }
+  
+  // Проверяем обновления при запуске
+  const result = await window.electronAPI.checkUpdates();
+  if (result.hasUpdate) {
+    showUpdateBadge(result);
+  }
+  
+  // Слушаем события автообновления
+  window.electronAPI.onUpdateAvailable((data) => {
+    showUpdateBadge(data);
+  });
+}
+
+function showUpdateBadge(updateInfo) {
+  const badge = document.getElementById('update-badge');
+  if (!badge) return;
+  
+  badge.style.display = 'flex';
+  badge.addEventListener('click', () => {
+    showUpdateNotification(updateInfo);
+  });
+}
+
+function showUpdateNotification(updateInfo) {
+  // Удаляем старое уведомление если есть
+  const old = document.querySelector('.update-notification');
+  if (old) old.remove();
+  
+  const notif = document.createElement('div');
+  notif.className = 'update-notification';
+  notif.innerHTML = `
+    <h4>Доступно обновление ${updateInfo.version}</h4>
+    <p>${updateInfo.releaseNotes || 'Новая версия Nexus Forge доступна для загрузки'}</p>
+    <button class="update-btn">Скачать обновление</button>
+  `;
+  
+  notif.querySelector('.update-btn').addEventListener('click', () => {
+    window.electronAPI.launchGame(updateInfo.url);
+    notif.remove();
+  });
+  
+  document.body.appendChild(notif);
+  
+  // Авто-удаление через 10 секунд
+  setTimeout(() => {
+    notif.style.opacity = '0';
+    setTimeout(() => notif.remove(), 300);
+  }, 10000);
 }
 
 function setupEventListeners() {
@@ -167,28 +190,27 @@ function setupEventListeners() {
   if (startBtn) {
     startBtn.addEventListener('click', async () => {
       if (!selectedGame) return;
-      if (runningGames.has(selectedGame.path)) return; // уже запущено
-
-      // Сразу помечаем как запущенное
-      runningGames.add(selectedGame.path);
-      renderGameList();
-      updateStartButton();
-
+      
+      const btn = startBtn;
+      const originalText = btn.querySelector('.start-text')?.textContent || 'START';
+      
+      const textEl = btn.querySelector('.start-text');
+      if (textEl) textEl.textContent = 'LAUNCHING...';
+      btn.style.opacity = '0.8';
+      
       try {
         await window.electronAPI.launchGame(selectedGame.path);
-        // Promise разрешается при старте процесса — ждём game-exited для сброса
+        if (textEl) textEl.textContent = 'RUNNING';
+        setTimeout(() => {
+          if (textEl) textEl.textContent = originalText;
+          btn.style.opacity = '1';
+        }, 2000);
       } catch (error) {
-        console.error('Failed to launch:', error);
-        // Если запуск провалился — убираем из running
-        runningGames.delete(selectedGame.path);
-        renderGameList();
-        updateStartButton();
-
-        const textEl = startBtn.querySelector('.start-text');
-        if (textEl) {
-          textEl.textContent = 'ERROR';
-          setTimeout(() => updateStartButton(), 2000);
-        }
+        if (textEl) textEl.textContent = 'ERROR';
+        setTimeout(() => {
+          if (textEl) textEl.textContent = originalText;
+          btn.style.opacity = '1';
+        }, 2000);
       }
     });
   }
@@ -214,4 +236,3 @@ function setupWindowControls() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
