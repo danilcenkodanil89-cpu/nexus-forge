@@ -1,121 +1,102 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus Forge</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Forge</title>
+    <link rel="stylesheet" href="main.css">
 </head>
+
 <body>
-  <!-- Video Background -->
-  <div class="video-background">
-    <video autoplay muted loop playsinline id="bg-video">
-      <source src="../assets/video/Wuthering Waves - Cartethyia.mp4" type="video/mp4">
-    </video>
-  </div>
-
-  <!-- Vignette Overlay -->
-  <div class="vignette-overlay"></div>
-
-  <!-- Title Bar -->
-  <div class="title-bar">
-    <div class="title-bar-left">
-      <span class="logo-icon">◈</span>
-      <span class="logo-text">NEXUS FORGE</span>
+    <div class="video-background">
+        <video autoplay muted loop playsinline id="bg-video">
+            <source src="../assets/video/Wuthering Waves - Cartethyia.mp4" type="video/mp4">
+        </video>
     </div>
-    <div class="title-bar-center">
-      <div class="update-badge" id="update-badge" style="display: none;">
-        <span class="update-dot"></span>
-        <span class="update-text">Обновление</span>
-      </div>
+    <div class="vignette-overlay"></div>
+    <div class="title-bar">
+        <div class="title-bar-left">
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">NEXUS FORGE</span>
+        </div>
+        <div class="title-bar-center">
+            <div class="update-badge" id="update-badge" style="display: none;">
+                <span class="update-dot"></span>
+                <span class="update-text">Обновление</span>
+            </div>
+        </div>
+        <div class="title-bar-right">
+            <button class="win-btn" id="minimize-btn">−</button>
+            <button class="win-btn close" id="close-btn">×</button>
+        </div>
     </div>
-    <div class="title-bar-right">
-      <button class="win-btn" id="minimize-btn">−</button>
-      <button class="win-btn close" id="close-btn">×</button>
+    <div class="floating-container">
+        <aside class="panel left-panel">
+            <div class="panel-header">
+                <h3>◈ МОИ ИГРЫ</h3>
+            </div>
+            <div class="game-list" id="game-list"></div>
+            <div class="panel-footer">
+                <div class="user-info">
+                    <div class="avatar">◉</div>
+                    <span>Игрок</span>
+                </div>
+                <div class="version-info" id="version-info">v1.0.0</div>
+            </div>
+        </aside>
+        <main class="panel center-panel">
+            <div class="big-icon-container" id="big-icon-container">
+                <div class="big-icon-glow"></div>
+                <div class="big-icon" id="big-icon"></div>
+            </div>
+            <div class="hero-content">
+                <div class="hero-title" id="hero-title">Wuthering Waves</div>
+                <div class="hero-subtitle" id="hero-subtitle">Откройте для себя мир свободы</div>
+            </div>
+            <div class="action-area">
+                <button class="icon-btn" id="menu-btn" title="Открыть папку">☰</button>
+                <button class="start-btn" id="start-btn">
+                    <span class="start-text">START</span>
+                    <span class="btn-shine"></span>
+                </button>
+                <label class="dx-checkbox">
+                    <input type="checkbox" id="dx11-mode">
+                    <span class="check-icon">✓</span>
+                    <span class="check-label">Launch with DirectX 11</span>
+                </label>
+            </div>
+        </main>
+        <aside class="panel right-panel">
+            <div class="news-tabs">
+                <button class="tab active">Notice</button>
+                <button class="tab">News</button>
+            </div>
+            <div class="news-list">
+                <div class="news-item">
+                    <div class="news-title">[Nexus Forge] Обновление v1.0</div>
+                    <div class="news-date">05-07</div>
+                </div>
+                <div class="news-item">
+                    <div class="news-title">[Wuthering Waves] Новый патч 2.0</div>
+                    <div class="news-date">05-05</div>
+                </div>
+                <div class="news-item">
+                    <div class="news-title">[Blood Strike] Сезон 3 начался</div>
+                    <div class="news-date">05-01</div>
+                </div>
+                <div class="news-item">
+                    <div class="news-title">[CS: Source] Новые карты</div>
+                    <div class="news-date">04-28</div>
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-title">Статус серверов ▸</div>
+                <p class="info-desc">Все системы работают стабильно.</p>
+            </div>
+        </aside>
     </div>
-  </div>
-
-  <!-- Floating Panels -->
-  <div class="floating-container">
-    <!-- Left Panel -->
-    <aside class="panel left-panel">
-      <div class="panel-header">
-        <h3>◈ МОИ ИГРЫ</h3>
-      </div>
-      
-      <div class="game-list" id="game-list"></div>
-
-      <div class="panel-footer">
-        <div class="user-info">
-          <div class="avatar">◉</div>
-          <span>Игрок</span>
-        </div>
-        <div class="version-info" id="version-info">v1.0.0</div>
-      </div>
-    </aside>
-
-    <!-- Center Panel -->
-    <main class="panel center-panel">
-      <!-- Big Game Icon -->
-      <div class="big-icon-container" id="big-icon-container">
-        <div class="big-icon-glow"></div>
-        <div class="big-icon" id="big-icon"></div>
-      </div>
-
-      <div class="hero-content">
-        <div class="hero-title" id="hero-title">Wuthering Waves</div>
-        <div class="hero-subtitle" id="hero-subtitle">Откройте для себя мир свободы</div>
-      </div>
-
-      <div class="action-area">
-        <button class="icon-btn" id="menu-btn" title="Открыть папку">☰</button>
-        
-        <button class="start-btn" id="start-btn">
-          <span class="start-text">START</span>
-          <span class="btn-shine"></span>
-        </button>
-        
-        <label class="dx-checkbox">
-          <input type="checkbox" id="dx11-mode">
-          <span class="check-icon">✓</span>
-          <span class="check-label">Launch with DirectX 11</span>
-        </label>
-      </div>
-    </main>
-
-    <!-- Right Panel -->
-    <aside class="panel right-panel">
-      <div class="news-tabs">
-        <button class="tab active">Notice</button>
-        <button class="tab">News</button>
-      </div>
-      
-      <div class="news-list">
-        <div class="news-item">
-          <div class="news-title">[Nexus Forge] Обновление v1.0</div>
-          <div class="news-date">05-07</div>
-        </div>
-        <div class="news-item">
-          <div class="news-title">[Wuthering Waves] Новый патч 2.0</div>
-          <div class="news-date">05-05</div>
-        </div>
-        <div class="news-item">
-          <div class="news-title">[Blood Strike] Сезон 3 начался</div>
-          <div class="news-date">05-01</div>
-        </div>
-        <div class="news-item">
-          <div class="news-title">[CS: Source] Новые карты</div>
-          <div class="news-date">04-28</div>
-        </div>
-      </div>
-
-      <div class="info-box">
-        <div class="info-title">Статус серверов ▸</div>
-        <p class="info-desc">Все системы работают стабильно.</p>
-      </div>
-    </aside>
-  </div>
-
-  <script src="renderer.js"></script>
+    <script src="renderer.js"></script>
 </body>
+
 </html>

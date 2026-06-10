@@ -1,6 +1,6 @@
 {
   "name": "nexus-forge",
-  "version": "1.1.0",
+  "version": "1.0.1",
   "description": "Игровой лаунчер в стиле Wuthering Waves",
   "main": "main.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "generate-icon": "node assets/generate-icon.js",
     "generate-icon-nsis": "node assets/generate-icon-bmp.js"
   },
-  "author": "Nexus Team",
+  "author": "HiSphere",
   "license": "MIT",
   "dependencies": {
     "extract-file-icon": "^0.3.2"
@@ -19,7 +19,7 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.nexusforge.launcher",
+    "appId": "ru.hisphere.nexusforge",
     "productName": "Nexus Forge",
     "directories": {
       "output": "dist"

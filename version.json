@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
-  "githubRepo": "danilcenkodanil89-cpu/nexus-forge",
-  "updateCheckInterval": 3600000
+    "version": "1.0.1",
+    "githubRepo": "danilcenkodanil89-cpu/nexus-forge",
+    "updateCheckInterval": 3600000
 }
