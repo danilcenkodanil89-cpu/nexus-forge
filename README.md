@@ -76,8 +76,8 @@ Nexus Forge is an Electron-based game launcher with a glass-morphism UI. It prov
 ### Installation
 
 ```sh
-git clone "https://github.com/danilcenkodanil89-cpu/Nexus Forge"
-cd "Nexus Forge"
+git clone "https://github.com/danilcenkodanil89-cpu/nexus-forge"
+cd "nexus-forge"
 npm install
 ```
 
@@ -91,9 +91,9 @@ npm start
 
 ## Contributing
 
-- [Report Issues](https://github.com/danilcenkodanil89-cpu/Nexus Forge/issues)
-- [Submit Pull Requests](https://github.com/danilcenkodanil89-cpu/Nexus Forge/pulls)
-- [Discussions](https://github.com/danilcenkodanil89-cpu/Nexus Forge/discussions)
+- [Report Issues](https://github.com/danilcenkodanil89-cpu/nexus-forge/issues)
+- [Submit Pull Requests](https://github.com/danilcenkodanil89-cpu/nexus-forge/pulls)
+- [Discussions](https://github.com/danilcenkodanil89-cpu/nexus-forge/discussions)
 
 ---
 
