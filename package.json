@@ -1,6 +1,6 @@
 {
   "name": "nexus-forge",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "Игровой лаунчер в стиле Wuthering Waves",
   "main": "main.js",
   "scripts": {
